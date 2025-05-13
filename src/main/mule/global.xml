@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd 
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
+	<http:listener-config name="who-sapi-httpListenerConfig" basePath="covid">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <apikit:config name="who-sapi-config" api="resource::a747e3ce-6f9e-4bf3-9208-d6e23369b012:who-sapi:1.0.2:oas:zip:who-sapi.yaml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+	<jms:config name="JMS_Config" doc:name="JMS Config" doc:id="c6b33741-356d-4f79-9bfa-9068b591dd24" >
+		<jms:active-mq-connection username="admin" password="admin" >
+			<jms:caching-strategy >
+				<jms:no-caching />
+			</jms:caching-strategy>
+			<jms:factory-configuration brokerUrl="tcp://0.0.0.0:61616"/>
+		</jms:active-mq-connection>
+	</jms:config>
+	<api-gateway:autodiscovery apiId="18399038" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="50966e4f-cd81-44b3-9bc6-00e2013b435c" flowRef="who-sapi-main" />
+	</mule>

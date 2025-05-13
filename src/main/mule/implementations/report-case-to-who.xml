@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd">
+	 <flow name="post:\cases:application\json:who-sapi-config">
+		<ee:transform doc:name="Set correlationId" doc:id="f70f6444-4fa0-4fba-bfa9-5195ee813a9e" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="correlationId" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.headers.'x-correlation-id' default payload.phone]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="Start Log" doc:id="69affee9-a408-4586-8691-70b982fd3b97" message='transactionID: #[vars.transactionId]], correlationID: #[vars.correlationId], message: "Started report case to WHO flow"' />
+		<ee:transform doc:name="Transform Covid Payload To WHO XML" doc:id="3c4aacae-bb60-4fb2-a34d-ac3f04112bcc" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+COVID_CASE: {
+	FIRST_NAME: payload.firstName,
+	LAST_NAME: payload.lastName,
+	PHONE: payload.phone,
+	EMAIL: payload.email,
+	DATE_OF_BIRTH: payload.dateOfBirth,
+	COUNTRY: payload.country
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="caseType" ><![CDATA[%dw 2.0
+output application/java
+---
+payload.caseType]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+<!-- [STUDIO:" Publish To WHO"]		<jms:publish doc:name=" Publish To WHO" doc:id="2c852332-ab40-4688-8b6c-3c49685f1f32" destination="Q.WHO.COVID.CASE.REPORT" persistentDelivery="true" config-ref="JMS_Config">
+			<jms:message outboundContentType="application/xml">
+				<jms:properties ><![CDATA[#[{
+	CASE_TYPE: vars.caseType
+}]]]></jms:properties>
+			</jms:message>
+		</jms:publish> [STUDIO] -->
+		<ee:transform doc:name="Set Response" doc:id="a40a32b7-4375-4127-95e0-0c1aded3c570" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	code: 200,
+	message: "Success",
+	description: "Case reported successfully",
+	dateTime: now() as String { format: "yyyy-MM-dd'T'HH:mm:ss'Z'" },
+	transactionId: vars.transactionId
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="End Log" doc:id="151f21c0-e6b1-4473-aa8b-379961c42131" message='transactionID: #[vars.transactionId]], correlationID: #[vars.correlationId], message: "Completed report case to WHO flow"' />
+    </flow>
+	</mule>
